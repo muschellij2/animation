@@ -20,6 +20,8 @@
 #'   \code{\link{system}}
 #' @param extra.opts additional options to be passed to \command{convert} (or
 #'   \command{gm convert})
+#' @param animation logical indicator if \code{-loop} and \code{-delay}
+#' should be used in the convert command
 #' @param clean logical: delete the input \code{files} or not
 #' @return The command for the conversion.
 #'
@@ -75,7 +77,8 @@
 #' @example inst/examples/im.convert-ex.R
 im.convert = function(
   files, output = 'animation.gif', convert = c('convert', 'gm convert'),
-  cmd.fun = if (.Platform$OS.type == 'windows') shell else system, extra.opts = '', clean = FALSE
+  cmd.fun = if (.Platform$OS.type == 'windows') shell else system, extra.opts = '', 
+  animation = TRUE, clean = FALSE
 ) {
   interval = head(ani.options('interval'), length(files))
   convert = match.arg(convert)
@@ -109,15 +112,24 @@ im.convert = function(
     } else convert = ani.options('convert')
   }
 
-  loop = ifelse(isTRUE(ani.options('loop')), 0, ani.options('loop'))
-  convert = sprintf(
-    '%s -loop %s %s %s %s', shQuote(convert), loop,
-    extra.opts, paste(
-      '-delay', interval * 100,
-      if (length(interval) == 1) paste(files, collapse = ' ') else files,
-      collapse = ' '),
-    shQuote(output)
-  )
+  if (animation) {
+    loop = ifelse(isTRUE(ani.options('loop')), 0, ani.options('loop'))
+    convert = sprintf(
+      '%s -loop %s %s %s %s', shQuote(convert), loop,
+      extra.opts, paste(
+        '-delay', interval * 100,
+        if (length(interval) == 1) paste(files, collapse = ' ') else files,
+        collapse = ' '),
+      shQuote(output)
+    )
+  } else {
+    convert = sprintf(
+      '%s %s %s %s', shQuote(convert), extra.opts, 
+      paste(files, collapse = ' '),
+      shQuote(output)
+    )    
+  }
+  
   message('Executing: ', strwrap(convert, exdent = 4, prefix = '\n'))
   if (interactive()) flush.console()
   cmd = cmd.fun(convert)
